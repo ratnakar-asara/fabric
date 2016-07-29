@@ -54,7 +54,7 @@ func (t *SimpleChaincode) Init(stub *shim.ChaincodeStub, function string, args [
 	if err != nil {
 		return nil, errors.New("Expecting integer value for asset holding")
 	}
-	fmt.Printf("Aval = %s, Bval = %d\n", Aval, Bval)
+	fmt.Printf("Aval = %s, counter = %d\n", Aval, Bval)
 
 	// Write the state to the ledger
 	err = stub.PutState(A, []byte(Aval))
@@ -78,7 +78,7 @@ func (t *SimpleChaincode) Invoke(stub *shim.ChaincodeStub, function string, args
 	}
 
 	var A, B, Aval string    // Entities
-	var Bval int // Asset holdings
+	var Bval int64 // Asset holdings
 	var err error
 
 	if len(args) != 3 {
@@ -97,19 +97,20 @@ func (t *SimpleChaincode) Invoke(stub *shim.ChaincodeStub, function string, args
 	if Bvalbytes == nil {
 		return nil, errors.New("Entity not found")
 	}
-	Bval, _ = strconv.Atoi(string(Bvalbytes))
+	Bval, _ = strconv.ParseInt(string(Bvalbytes), 10, 64) //strconv.Atoi(string(Bvalbytes))
+	
 
 	// Perform the execution
 	Bval = Bval + 1
-	fmt.Printf("Aval = %s, Bval = %d\n", Aval, Bval)
+	fmt.Printf("1K Payload = %s, counter = %d\n", Aval, Bval)
 
 	// Write the state back to the ledger
-	err = stub.PutState(A, []byte(Aval))
+	err = stub.PutState(A+strconv.FormatInt(Bval, 10), []byte(Aval))
 	if err != nil {
 		return nil, err
 	}
 
-	err = stub.PutState(B, []byte(strconv.Itoa(Bval)))
+	err = stub.PutState(B, []byte(strconv.FormatInt(Bval,10)))
 	if err != nil {
 		return nil, err
 	}
@@ -160,7 +161,7 @@ func (t *SimpleChaincode) Query(stub *shim.ChaincodeStub, function string, args 
 		return nil, errors.New(jsonResp)
 	}
 
-	jsonResp := "{\"Name\":\"" + A + "\",\"Amount\":\"" + string(Avalbytes) + "\"}"
+	jsonResp := "{\"Name\":\"" + A + "\",\"Counter\":\"" + string(Avalbytes) + "\"}"
 	fmt.Printf("Query Response:%s\n", jsonResp)
 	return Avalbytes, nil
 }
